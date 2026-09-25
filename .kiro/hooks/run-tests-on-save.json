@@ -1,0 +1,16 @@
+{
+  "version": "v1",
+  "hooks": [
+    {
+      "name": "Run unit tests on Python file save",
+      "trigger": "PostFileSave",
+      "description": "Esegue i test unitari del servizio ogni volta che si salva un file .py dentro services/",
+      "matcher": "services[\\\\/][^/]+[\\\\/].*\\.py$",
+      "action": {
+        "type": "command",
+        "command": "python -m pytest tests/unit/ -q --tb=short 2>&1 | tail -20",
+        "timeout": 60
+      }
+    }
+  ]
+}
