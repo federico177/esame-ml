@@ -1,0 +1,9 @@
+# runtime
+flask
+requests
+
+# test
+pytest
+pytest-cov
+responses
+jsonschema
