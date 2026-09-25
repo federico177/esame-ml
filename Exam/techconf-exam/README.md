@@ -3,13 +3,15 @@
 Piattaforma a microservizi (Spec-Driven Development con Kiro) per gestire utenti, eventi
 e iscrizioni a conferenze tech.
 
-## Servizi implementati (obbligatori)
+## Servizi implementati
 
 | Servizio | Base path | Porta dev | Chiama |
 |---|---|---|---|
 | user-service | `/api/v1/users` | 5001 | — |
 | event-service | `/api/v1/events` | 5002 | user |
 | registration-service | `/api/v1/registrations` | 5003 | user, event |
+| feedback-service (opz.) | `/api/v1/feedbacks` | 5004 | registration, event |
+| notification-service (opz.) | `/api/v1/notifications` | 5005 | user, registration |
 
 ## Requisiti
 
@@ -69,7 +71,7 @@ cd services/event-service && python -m pytest tests/integration/
 cd services/registration-service && python -m pytest tests/integration/
 ```
 
-Coverage attuale: user 89%, event 84%, registration 86% (target >= 80%).
+Coverage: user 89%, event 84%, registration 86%, feedback 85%, notification 85% (target >= 80%).
 
 ## Suite di collaudo (docente)
 
@@ -78,7 +80,7 @@ pip install -r tests/integration/requirements.txt
 python -m pytest tests/integration -m mandatory -v
 ```
 
-Risultato: **27/27 test obbligatori passati** (output in `collaudo.txt`).
+Risultato: **37/37 test passati** (3 obbligatori + 2 opzionali, output in `collaudo.txt`).
 
 ## Struttura del progetto
 
@@ -104,3 +106,4 @@ techconf-exam/
 - I file in `contracts/` e `tests/integration/` non sono stati modificati.
 - Gli URL degli altri servizi sono letti solo da variabili d'ambiente.
 - La cartella `data/` è esclusa da git.
+
