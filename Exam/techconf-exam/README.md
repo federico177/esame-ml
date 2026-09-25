@@ -1,66 +1,106 @@
-# techconf-exam — Template Repository
+﻿# TechConf — Microservizi per la gestione delle conferenze
 
-Template repository for the **TechConf** practical exam (Spec-Driven Development with Kiro).
+Piattaforma a microservizi (Spec-Driven Development con Kiro) per gestire utenti, eventi
+e iscrizioni a conferenze tech.
 
-Fork this repository and implement the microservices described in `Exam.MD` / the exam
-brief. This template ships the **non-modifiable** contracts and the acceptance test suite.
+## Servizi implementati (obbligatori)
 
-## What this template provides
+| Servizio | Base path | Porta dev | Chiama |
+|---|---|---|---|
+| user-service | `/api/v1/users` | 5001 | — |
+| event-service | `/api/v1/events` | 5002 | user |
+| registration-service | `/api/v1/registrations` | 5003 | user, event |
 
-| Path | Content | Modifiable? |
-|---|---|---|
-| `contracts/openapi/*.yaml` | OpenAPI 3.0 contracts for the 5 services — the source of truth | ❌ NO |
-| `contracts/validator.py` | `assert_matches_contract(service, method, path, response)` helper | ❌ NO |
-| `tests/integration/` | Acceptance test suite (client→service, service→service, e2e, resilience) | ❌ NO |
-| `CHECKSUMS.sha256` | Fingerprints of the non-modifiable files | ❌ NO |
-| `services.example.yaml` | Example manifest read by the suite to launch your services | ✅ copy to `services.yaml` |
+## Requisiti
 
-Everything else (service code, unit tests, specs, steering) is designed by you.
+- Python 3.12
+- Dipendenze runtime: `flask`, `requests` (solo librerie standard per la persistenza)
 
-## Verifying the protected files
-
+Installazione dipendenze (per servizio):
 ```bash
-sha256sum -c CHECKSUMS.sha256
+pip install -r services/user-service/requirements.txt
+pip install -r services/event-service/requirements.txt
+pip install -r services/registration-service/requirements.txt
 ```
 
-If you believe a contract is wrong, **open an issue** — do not modify it.
+## Avvio dei servizi
 
-## Running the acceptance suite
+Ogni servizio si avvia con lo stesso comando, dalla sua cartella:
+```bash
+cd services/user-service && PORT=5001 python -m app
+cd services/event-service && PORT=5002 USER_SERVICE_URL=http://localhost:5001 python -m app
+cd services/registration-service && PORT=5003 USER_SERVICE_URL=http://localhost:5001 EVENT_SERVICE_URL=http://localhost:5002 python -m app
+```
 
-1. Copy the manifest and declare the services you implemented:
+Su Windows PowerShell:
+```powershell
+$env:PORT=5001; cd services/user-service; python -m app
+```
 
-   ```bash
-   cp services.example.yaml services.yaml
-   ```
+## Variabili d'ambiente
 
-2. Install the suite dependencies:
+| Variabile | Default | Descrizione |
+|---|---|---|
+| `PORT` | 5001/5002/5003 | Porta di ascolto (obbligatoria in collaudo) |
+| `STORAGE_BACKEND` | `memory` | `memory` \| `json` \| `sqlite` |
+| `DATA_DIR` | `./data` | Cartella per i file json/sqlite (esclusa da git) |
+| `USER_SERVICE_URL` | `http://localhost:5001` | URL di user-service |
+| `EVENT_SERVICE_URL` | `http://localhost:5002` | URL di event-service |
 
-   ```bash
-   pip install -r tests/integration/requirements.txt
-   ```
+## Persistenza
 
-3. Run the suite:
+Backend intercambiabile senza modifiche alla logica di business:
+- `memory` — dizionario in memoria (default, usato nei test)
+- `json` — file JSON in `DATA_DIR`
+- `sqlite` — database SQLite in `DATA_DIR` (stdlib `sqlite3`)
 
-   ```bash
-   pytest tests/integration -v                 # all declared services
-   pytest tests/integration -m mandatory -v    # only the 3 mandatory services
-   pytest tests/integration -k registration -v # a single service
-   ```
+## Test
 
-Services not declared in `services.yaml` are **skipped**, not failed.
+Unit test di un singolo servizio (con coverage):
+```bash
+cd services/user-service && python -m pytest tests/unit/ --cov=app
+cd services/event-service && python -m pytest tests/unit/ --cov=app
+cd services/registration-service && python -m pytest tests/unit/ --cov=app
+```
 
-## The manifest (`services.yaml`)
+Test di integrazione propri (avviano i servizi reali):
+```bash
+cd services/event-service && python -m pytest tests/integration/
+cd services/registration-service && python -m pytest tests/integration/
+```
 
-For each implemented service declare its working directory (`cwd`) and start `command`.
-The suite injects `PORT` and `*_SERVICE_URL` environment variables. Each service **must**
-listen on the port given by `PORT`.
+Coverage attuale: user 89%, event 84%, registration 86% (target >= 80%).
 
-See `services.example.yaml` for the exact schema.
+## Suite di collaudo (docente)
 
-## Ports
+```bash
+pip install -r tests/integration/requirements.txt
+python -m pytest tests/integration -m mandatory -v
+```
 
-- Development ports: `5001`–`5005`.
-- Acceptance ports: `15001`–`15005` (and `15101+` for resilience instances).
-- Your service must **always** read the port from the `PORT` environment variable.
+Risultato: **27/27 test obbligatori passati** (output in `collaudo.txt`).
 
-Logs of services launched by the suite are written to `.it-logs/<service>.log`.
+## Struttura del progetto
+
+```
+techconf-exam/
+├── .kiro/
+│   ├── steering/        # product, tech, structure, platform-standards
+│   ├── specs/           # requirements/design/tasks per ogni servizio
+│   └── hooks/           # agent hook: test al salvataggio
+├── contracts/           # OpenAPI (non modificabili)
+├── services/
+│   ├── user-service/
+│   ├── event-service/
+│   └── registration-service/
+├── tests/integration/   # suite di collaudo (non modificabile)
+├── services.yaml
+├── BUGS.md
+└── collaudo.txt
+```
+
+## Note
+
+- I file in `contracts/` e `tests/integration/` non sono stati modificati.
+- Gli URL degli altri servizi sono letti solo da variabili d'ambiente.
+- La cartella `data/` è esclusa da git.
